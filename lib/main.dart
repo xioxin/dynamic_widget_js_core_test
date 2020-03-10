@@ -44,7 +44,7 @@ class HomePage extends StatelessWidget {
         onPressed: () {
 
 
-          final controller = JsCorePageController();
+          final controller = JsCorePageController(context);
 
           controller.evaluate('''
 var listV = new ListView();

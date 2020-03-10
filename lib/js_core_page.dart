@@ -2,17 +2,18 @@ import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_jscore/flutter_jscore.dart';
-import 'package:jsrun/tools.dart';
 
 import 'js_core_helper/function/console.dart';
+import 'js_core_helper/function/js_flutter.dart';
 
 class JsCorePageController {
   JSContext context;
+  BuildContext buildContext;
 
-
-  JsCorePageController () {
+  JsCorePageController (this.buildContext) {
     context = JSContext.createInGroup();
     JsConsole(context);
+    JsFlutter(context, buildContext);
     JsText.injectionJsClass(context);
   }
 
@@ -57,7 +58,6 @@ class JsCorePageController {
 
 
 class JsCorePage extends StatefulWidget {
-
 
   String script;
   JsCorePageController controller;
@@ -113,7 +113,6 @@ class JsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     throw UnimplementedError();
   }
 
@@ -153,7 +152,7 @@ class JsText extends JsWidget {
     var function = JSObject.makeFunctionWithCallback(context, 'test', Pointer.fromFunction(test));
     that.setProperty('test', function.toValue(), JSPropertyAttributes.kJSPropertyAttributeDontDelete);
     final widget = Text(arg.getProperty('data').string ?? '');
-    final jsWidget = JsWidget();
+    final jsWidget = JsText();
     jsWidget.registerWidget('Text', widget);
     that.setProperty('widgetKey', JSValue.makeString(context, jsWidget.widgetKey), JSPropertyAttributes.kJSPropertyAttributeDontDelete);
     return constructor;
