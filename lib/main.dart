@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:ffi';
 
-import 'package:dynamic_widget/dynamic_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_jscore/flutter_jscore.dart';
@@ -52,8 +51,12 @@ var listV = new ListView();
 listV.test();
 console.log(Object.keys(listV).toString());
 listV = null;
-
 ''');
+
+          Navigator.push(context, MaterialPageRoute(builder: (_) {
+            return HomePage();
+          }));
+
 
         },
       )),

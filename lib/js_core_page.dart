@@ -9,10 +9,11 @@ import 'js_core_helper/function/console.dart';
 class JsCorePageController {
   JSContext context;
 
+
   JsCorePageController () {
     context = JSContext.createInGroup();
     JsConsole(context);
-    JsListView.jsClass(context);
+    JsText.injectionJsClass(context);
   }
 
   JSValue evaluate(String script) {
@@ -52,7 +53,11 @@ class JsCorePageController {
 
 
 
+
+
+
 class JsCorePage extends StatefulWidget {
+
 
   String script;
   JsCorePageController controller;
@@ -81,10 +86,45 @@ class _JsCorePageState extends State<JsCorePage> {
 
 
 
-class JsListView extends StatelessWidget {
+class JsWidget extends StatelessWidget {
+  static Map<String, dynamic> staticFunction = {};
+  static int _widgetId = 0;
+  static Map<String, JsWidget> widgets = {};
+  static newWidgetId() {
+    return ++_widgetId;
+  }
+
+  static getWidgetForKey(String key) => widgets[key];
+
+  Widget widget;
+  registerWidget(String widgetName, Widget widget) {
+    widgetKey = '$widgetName:${newWidgetId()}';
+    this.widget = widget;
+    widgets[widgetKey] = this;
+    return widgetKey;
+  }
+  String widgetName;
+  String widgetKey;
+  JSContext context;
+
+  static injectionJsClass(JSContext context) {
+
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    throw UnimplementedError();
+  }
+
+}
 
 
-  static jsClass(JSContext context) {
+
+class JsText extends JsWidget {
+
+  @override
+  static injectionJsClass(JSContext context) {
     final classDef = JSClassDefinition(
       version: 0,
       attributes: JSClassAttributes.kJSClassAttributeNone,
@@ -92,6 +132,7 @@ class JsListView extends StatelessWidget {
       callAsConstructor: Pointer.fromFunction(jsClassInitialize),
       finalize: Pointer.fromFunction(jsClassFinalize),
       staticFunctions: [
+
       ],
     );
     var flutterJSClass = JSClass.create(classDef);
@@ -106,13 +147,15 @@ class JsListView extends StatelessWidget {
       int argumentCount,
       Pointer<Pointer> arguments,
       Pointer<Pointer> exception) {
-    print('jsClassInitialize 1');
     final context = JSContext(ctx);
-    print('jsClassInitialize 2');
     final that = JSValue(context, constructor).toObject();
+    final arg = JSValue(context, arguments).toObject().getPropertyAtIndex(0).toObject();
     var function = JSObject.makeFunctionWithCallback(context, 'test', Pointer.fromFunction(test));
     that.setProperty('test', function.toValue(), JSPropertyAttributes.kJSPropertyAttributeDontDelete);
-    that.setProperty('val1', JSValue.makeString(context, 'test'), JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+    final widget = Text(arg.getProperty('data').string ?? '');
+    final jsWidget = JsWidget();
+    jsWidget.registerWidget('Text', widget);
+    that.setProperty('widgetKey', JSValue.makeString(context, jsWidget.widgetKey), JSPropertyAttributes.kJSPropertyAttributeDontDelete);
     return constructor;
    }
 
@@ -130,9 +173,16 @@ class JsListView extends StatelessWidget {
     print("jsClassInitialize test");
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return Container();
+    return this.widget;
   }
 }
+
+
+
+
+
+
+
+
