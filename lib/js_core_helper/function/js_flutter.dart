@@ -20,7 +20,7 @@ class JsFlutter {
       ],
     ));
     var flutterJSObject = JSObject.make(context, flutterJSClass);
-    context.globalObject.setProperty('console', flutterJSObject.toValue(),
+    context.globalObject.setProperty('flutter', flutterJSObject.toValue(),
         JSPropertyAttributes.kJSPropertyAttributeDontDelete);
   }
 
@@ -31,18 +31,17 @@ class JsFlutter {
       int argumentCount,
       Pointer<Pointer> arguments,
       Pointer<Pointer> exception) {
-    if (argumentCount > 0) {
-      final context = JSContext(ctx);
-
-      final widgetKey = JSValue(context, arguments[0]).toObject().getProperty('widgetKey').string;
-      final widget = JsWidget.getWidgetForKey(widgetKey);
-      final controllerId = context.globalObject.getProperty(PropertyName.controllerId).toNumber().floor();
-      final controller = JsCorePageController.getControllerById(controllerId);
-
-      Navigator.of(controller.buildContext).push(MaterialPageRoute(builder: (BuildContext context) {
-        return widget;
-      }));
-    }
+      print('showWidget');
+      if (argumentCount > 0) {
+        final context = JSContext(ctx);
+        final widget = JsWidget.getWidgetForJSValue(JSValue(context, arguments[0]));
+        print(widget);
+        final controllerId = context.globalObject.getProperty(PropertyName.controllerId).toNumber().floor();
+        final controller = JsCorePageController.getControllerById(controllerId);
+        Navigator.push(controller.buildContext, MaterialPageRoute(builder: (_) {
+          return widget;
+        }));
+      }
   }
 }
 

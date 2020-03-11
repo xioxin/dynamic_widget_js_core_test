@@ -40,23 +40,22 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       body: Center(
           child: RaisedButton(
-        child: Text('打开就是'),
+        child: Text('RUN'),
         onPressed: () {
-
-
           final controller = JsCorePageController(context);
-
           controller.evaluate('''
-var listV = new ListView();
-listV.test();
-console.log(Object.keys(listV).toString());
-listV = null;
+console.log('CONTROLLER: ' + __CONTROLLER_ID__);
+var test = new Scaffold({
+  body: new RaisedButton({
+    child: new Text('测试'),
+    onPressed: () => {
+      console.log("button click");
+    }
+  }) 
+});
+flutter.showWidget(test);
 ''');
-
-          Navigator.push(context, MaterialPageRoute(builder: (_) {
-            return HomePage();
-          }));
-
+          print(JsWidget.widgets);
 
         },
       )),
