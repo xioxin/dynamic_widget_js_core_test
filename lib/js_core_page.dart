@@ -285,17 +285,14 @@ class JsRaisedButton extends JsWidget {
         child = JsWidget.getWidgetForJSValue(arg1.getProperty('child'));
       }
       if(arg1.hasProperty('onPressed')) {
-        print('onPressed 0');
         final onPressedJsValue = arg1.getProperty('onPressed');
         print(jsValueType(onPressedJsValue));
 
-        print('onPressed 1');
         final onPressedObj = onPressedJsValue.toObject();
-        print('onPressed 2');
         onPressed = () {
-          print('onPressed 3');
+          print('onPressed');
 //          onPressedObj.isFunction
-          onPressedObj.callAsFunction(JSValue.makeNull(context).toObject(), JSValuePointer.array([]));
+          onPressedObj.callAsFunction(context.globalObject, JSValuePointer.array([]));
         };
       }
     }
