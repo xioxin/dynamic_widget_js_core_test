@@ -6,12 +6,28 @@ import 'package:flutter_jscore/flutter_jscore.dart';
 import 'js_core_helper/function/console.dart';
 import 'js_core_helper/function/js_flutter.dart';
 
+
+class PropertyName {
+  static const String controllerId = '__CONTROLLER_ID__';
+}
+
 class JsCorePageController {
   JSContext context;
   BuildContext buildContext;
 
+  static Map<int, JsCorePageController> controllers = {};
+  static int _controllerTally = 0;
+  int controllerId;
+
+  static JsCorePageController getControllerById(int id) => controllers[id];
+
   JsCorePageController (this.buildContext) {
+    controllerId = ++_controllerTally;
+    controllers[controllerId] = this;
     context = JSContext.createInGroup();
+    context.globalObject.setProperty(PropertyName.controllerId, JSValue.makeNumber(context, controllerId.toDouble()),
+        JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+
     JsConsole(context);
     JsFlutter(context, buildContext);
     JsText.injectionJsClass(context);
@@ -60,21 +76,19 @@ class JsCorePageController {
 class JsCorePage extends StatefulWidget {
 
   String script;
-  JsCorePageController controller;
 
-  JsCorePage({Key key, this.script, this.controller}) : super(key: key) {
-    this.controller ??= JsCorePageController();
-    controller.evaluate(this.script);
-  }
-
+  JsCorePage({Key key, this.script}) : super(key: key);
   @override
   _JsCorePageState createState() => _JsCorePageState();
 }
 
 class _JsCorePageState extends State<JsCorePage> {
+  JsCorePageController controller;
 
   @override
   void initState() {
+    this.controller ??= JsCorePageController(this.context);
+    controller.evaluate(widget.script);
     super.initState();
   }
 
@@ -94,7 +108,7 @@ class JsWidget extends StatelessWidget {
     return ++_widgetId;
   }
 
-  static getWidgetForKey(String key) => widgets[key];
+  static JsWidget getWidgetForKey(String key) => widgets[key];
 
   Widget widget;
   registerWidget(String widgetName, Widget widget) {

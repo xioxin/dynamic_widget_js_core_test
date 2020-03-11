@@ -35,13 +35,13 @@ class JsFlutter {
       final context = JSContext(ctx);
 
       final widgetKey = JSValue(context, arguments[0]).toObject().getProperty('widgetKey').string;
-
       final widget = JsWidget.getWidgetForKey(widgetKey);
+      final controllerId = context.globalObject.getProperty(PropertyName.controllerId).toNumber().floor();
+      final controller = JsCorePageController.getControllerById(controllerId);
 
-      Navigator.of(context);
-
-      
-//      print(JSValue(context, arguments[0]).string);
+      Navigator.of(controller.buildContext).push(MaterialPageRoute(builder: (BuildContext context) {
+        return widget;
+      }));
     }
   }
 }
