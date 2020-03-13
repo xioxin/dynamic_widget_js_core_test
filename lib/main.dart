@@ -46,13 +46,29 @@ class HomePage extends StatelessWidget {
           controller.evaluate('''
 console.log('CONTROLLER: ' + __CONTROLLER_ID__);
 var test = new Scaffold({
+  appBar: new AppBar({title: new Text('标题111'), actions: [
+    new RaisedButton({
+      child: new Text('Action2'),
+      onPressed: () => {
+        console.log("button Action");
+      }
+    }),
+    new RaisedButton({
+      child: new Text('Action3'),
+      onPressed: () => {
+        console.log("button Action");
+      }
+    })
+  ]}),
   body: new RaisedButton({
-    child: new Text('测试'),
+    child: new Text('测试222'),
     onPressed: () => {
       console.log("button click");
     }
-  }) 
+  })
 });
+console.log('hello world');
+console.log(JSON.stringify(test));
 flutter.showWidget(test);
 ''');
           print(JsWidget.widgets);

@@ -35,8 +35,8 @@ class JsCorePageController {
     JsFlutter(context, buildContext);
     JsScaffold.injectionJsClass(context);
     JsText.injectionJsClass(context);
+    JsAppBar.injectionJsClass(context);
     JsRaisedButton.injectionJsClass(context);
-
   }
 
   JSValue evaluate(String script) {
@@ -83,24 +83,30 @@ class _JsCorePageState extends State<JsCorePage> {
   }
 }
 
-class JsWidget extends StatelessWidget {
+class JsWidget {
   static Map<String, dynamic> staticFunction = {};
   static int _widgetId = 0;
   static Map<String, JsWidget> widgets = {};
 
   static newWidgetId() {
-    return ++_widgetId;
+    return _widgetId++;
   }
 
-  static JsWidget getWidgetForKey(String key) => widgets[key];
-  static JsWidget getWidgetForJSValue(JSValue jsValue) {
-    if(jsValue.isObject) {
+  static Widget getWidgetForKey(String key) => widgets[key]?.widget;
+
+  static Widget getWidgetForJSValue(JSValue jsValue) {
+    if (jsValue.isObject) {
       final jsObj = jsValue.toObject();
-      if(jsObj.hasProperty(PropertyName.widgetKey)) {
+      if (jsObj.hasProperty(PropertyName.widgetKey)) {
         final widgetKey = jsObj.getProperty(PropertyName.widgetKey).string;
+        print('getWidgetForKey widgetKey: $widgetKey');
+
         return getWidgetForKey(widgetKey);
       }
     }
+    print('getWFJSV???');
+
+    return null;
     // todo: 错误处理
   }
 
@@ -108,6 +114,7 @@ class JsWidget extends StatelessWidget {
 
   registerWidget(String widgetName, Widget widget) {
     widgetKey = '$widgetName:${newWidgetId()}';
+    print('registerWidget: $widgetKey $widget');
     this.widget = widget;
     widgets[widgetKey] = this;
     return widgetKey;
@@ -118,13 +125,6 @@ class JsWidget extends StatelessWidget {
   JSContext context;
 
   static injectionJsClass(JSContext context) {}
-
-  @override
-  Widget build(BuildContext context) {
-    // TODO: implement build
-    throw UnimplementedError();
-  }
-
 }
 
 class JsText extends JsWidget {
@@ -167,6 +167,7 @@ class JsText extends JsWidget {
     final widget = Text(text ?? '');
     final jsWidget = JsText();
     jsWidget.registerWidget('Text', widget);
+    print("${jsWidget.widgetKey} -> ${text}");
     that.setProperty(
         PropertyName.widgetKey,
         JSValue.makeString(context, jsWidget.widgetKey),
@@ -178,10 +179,6 @@ class JsText extends JsWidget {
     print("jsClassFinalize 即将销毁");
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return this.widget;
-  }
 }
 
 class JsScaffold extends JsWidget {
@@ -215,20 +212,20 @@ class JsScaffold extends JsWidget {
 
     if (argumentCount >= 1) {
       final arg1 = JSValue(context, arguments[0]).toObject();
-      if(arg1.hasProperty('appBar')) {
+      if (arg1.hasProperty('appBar')) {
         appBar = JsWidget.getWidgetForJSValue(arg1.getProperty('appBar'));
       }
-      if(arg1.hasProperty('body')) {
+      if (arg1.hasProperty('body')) {
         body = JsWidget.getWidgetForJSValue(arg1.getProperty('body'));
       }
     }
     final widget = Scaffold(
+      appBar: appBar,
       body: body,
-//      appBar: appBar, todo: Type PreferredSizeWidget
     );
     final jsWidget = JsScaffold();
     jsWidget.registerWidget('Scaffold', widget);
-    print( jsWidget.widgetKey);
+    print(jsWidget.widgetKey);
     that.setProperty(
         PropertyName.widgetKey,
         JSValue.makeString(context, jsWidget.widgetKey),
@@ -240,14 +237,79 @@ class JsScaffold extends JsWidget {
     print("jsClassFinalize 即将销毁");
   }
 
+}
+
+class JsAppBar extends JsWidget {
   @override
-  Widget build(BuildContext context) {
-    return this.widget;
+  static injectionJsClass(JSContext context) {
+    final classDef = JSClassDefinition(
+      version: 0,
+      attributes: JSClassAttributes.kJSClassAttributeNone,
+      className: 'AppBar',
+      callAsConstructor: Pointer.fromFunction(jsClassInitialize),
+      finalize: Pointer.fromFunction(jsClassFinalize),
+      staticFunctions: [],
+    );
+    var flutterJSClass = JSClass.create(classDef);
+    var flutterJSObject = JSObject.make(context, flutterJSClass);
+    context.globalObject.setProperty('AppBar', flutterJSObject.toValue(),
+        JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+  }
+
+  static Pointer jsClassInitialize(
+      Pointer ctx,
+      Pointer constructor,
+      int argumentCount,
+      Pointer<Pointer> arguments,
+      Pointer<Pointer> exception) {
+    final context = JSContext(ctx);
+    final that = JSValue(context, constructor).toObject();
+    Widget title;
+    Widget leading;
+    List<Widget> actions;
+
+    if (argumentCount >= 1) {
+      final arg1 = JSValue(context, arguments[0]).toObject();
+      if (arg1.hasProperty('title')) {
+        title = JsWidget.getWidgetForJSValue(arg1.getProperty('title'));
+      }
+      if (arg1.hasProperty('leading')) {
+        leading = JsWidget.getWidgetForJSValue(arg1.getProperty('leading'));
+      }
+      if (arg1.hasProperty('actions')) {
+        final actionsObj = arg1.getProperty('actions').toObject();
+        final length = actionsObj.getProperty('length').toNumber().toInt();
+        print('length: $length');
+
+
+        if(length > 0) {
+          actions = [];
+          for(int i = 0; i < length; i++) {
+            actions.add(JsWidget.getWidgetForJSValue(actionsObj.getPropertyAtIndex(i)));
+          }
+        }
+      }
+    }
+    final widget = AppBar(
+      title: title,
+      leading: leading,
+      actions: actions,
+    );
+    final jsWidget = JsAppBar();
+    jsWidget.registerWidget('AppBar', widget);
+    print(jsWidget.widgetKey);
+    that.setProperty(
+        PropertyName.widgetKey,
+        JSValue.makeString(context, jsWidget.widgetKey),
+        JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+    return constructor;
+  }
+
+  static void jsClassFinalize(Pointer object) {
+    print("jsClassFinalize 即将销毁");
   }
 
 }
-
-
 
 //   RaisedButton(onPressed: () {}, child: ,)
 class JsRaisedButton extends JsWidget {
@@ -281,18 +343,18 @@ class JsRaisedButton extends JsWidget {
 
     if (argumentCount >= 1) {
       final arg1 = JSValue(context, arguments[0]).toObject();
-      if(arg1.hasProperty('child')) {
+      if (arg1.hasProperty('child')) {
         child = JsWidget.getWidgetForJSValue(arg1.getProperty('child'));
       }
-      if(arg1.hasProperty('onPressed')) {
+      if (arg1.hasProperty('onPressed')) {
         final onPressedJsValue = arg1.getProperty('onPressed');
         print(jsValueType(onPressedJsValue));
 
         final onPressedObj = onPressedJsValue.toObject();
         onPressed = () {
           print('onPressed');
-//          onPressedObj.isFunction
-          onPressedObj.callAsFunction(context.globalObject, JSValuePointer.array([]));
+          onPressedObj.callAsFunction(context.globalObject,
+              JSValuePointer.array([JSValue.makeString(context, 'test')]));
         };
       }
     }
@@ -302,7 +364,7 @@ class JsRaisedButton extends JsWidget {
     );
     final jsWidget = JsRaisedButton();
     jsWidget.registerWidget('RaisedButton', widget);
-    print( jsWidget.widgetKey);
+    print(jsWidget.widgetKey);
     that.setProperty(
         PropertyName.widgetKey,
         JSValue.makeString(context, jsWidget.widgetKey),
@@ -318,5 +380,5 @@ class JsRaisedButton extends JsWidget {
   Widget build(BuildContext context) {
     return this.widget;
   }
-
 }
+
