@@ -43,34 +43,33 @@ class HomePage extends StatelessWidget {
         child: Text('RUN'),
         onPressed: () {
           final controller = JsCorePageController(context);
-          controller.evaluate('''
-console.log('CONTROLLER: ' + __CONTROLLER_ID__);
-var test = new Scaffold({
-  appBar: new AppBar({title: new Text('标题111'), actions: [
-    new RaisedButton({
-      child: new Text('Action2'),
-      onPressed: () => {
-        console.log("button Action");
-      }
-    }),
-    new RaisedButton({
-      child: new Text('Action3'),
-      onPressed: () => {
-        console.log("button Action");
-      }
-    })
-  ]}),
-  body: new RaisedButton({
-    child: new Text('测试222'),
-    onPressed: () => {
-      console.log("button click");
-    }
-  })
-});
-console.log('hello world');
-console.log(JSON.stringify(test));
-flutter.showWidget(test);
-''');
+//          controller.evaluate('''
+//console.log('CONTROLLER: ' + __CONTROLLER_ID__);
+//var test = new Scaffold({
+//  appBar: new AppBar({title: new Text('标题111'), actions: [
+//    new RaisedButton({
+//      child: new Text('Action2'),
+//      onPressed: () => {
+//        console.log("button Action");
+//      }
+//    }),
+//  ]}),
+//  body: new RaisedButton({
+//    child: new Text('测试222'),
+//    onPressed: () => {
+//      console.log("button click");
+//    }
+//  })
+//});
+//console.log('hello world');
+//console.log(JSON.stringify(test, null, 2));
+//flutter.showWidget(test);
+//''');
+
+          controller.evaluate("""
+          flutter.test({a: new Text('测试222'), b: new Text('测试222')})
+          """);
+
           print(JsWidget.widgets);
 
         },

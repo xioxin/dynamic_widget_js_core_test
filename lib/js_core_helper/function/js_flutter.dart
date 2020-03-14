@@ -17,6 +17,11 @@ class JsFlutter {
           callAsFunction: Pointer.fromFunction(showWidget),
           attributes: JSPropertyAttributes.kJSPropertyAttributeNone,
         ),
+        JSStaticFunction(
+          name: 'test',
+          callAsFunction: Pointer.fromFunction(test),
+          attributes: JSPropertyAttributes.kJSPropertyAttributeNone,
+        ),
       ],
     ));
     var flutterJSObject = JSObject.make(context, flutterJSClass);
@@ -42,6 +47,24 @@ class JsFlutter {
           return widget;
         }));
       }
+  }
+
+
+
+  static Pointer test(
+      Pointer ctx,
+      Pointer function,
+      Pointer thisObject,
+      int argumentCount,
+      Pointer<Pointer> arguments,
+      Pointer<Pointer> exception) {
+    print('showWidget');
+    if (argumentCount > 0) {
+      final context = JSContext(ctx);
+      final obj = JSValue(context, arguments[0]).toObject();
+      print("a: ${obj.getProperty('a').createJSONString(JSValuePointer(nullptr)).string}");
+      print("b: ${obj.getProperty('b').createJSONString(JSValuePointer(nullptr)).string}");
+    }
   }
 }
 
