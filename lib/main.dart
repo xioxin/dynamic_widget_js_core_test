@@ -1,13 +1,11 @@
-import 'dart:async';
 import 'dart:ffi';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_jscore/flutter_jscore.dart';
-
-import 'js_core_helper/function/console.dart';
-import 'js_core_page.dart';
-import 'widget_json.dart';
+import 'package:jsrun/tools.dart';
+import 'js_class/console.dart';
+import 'js_core_page_controller.dart';
+import 'js_widget/js_widget.dart';
 
 void main() => runApp(MyApp());
 
@@ -29,10 +27,96 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: HomePage(),
+      home: TestBug2(),
     );
   }
 }
+
+
+
+
+class TestBug extends StatelessWidget {
+
+  static Pointer jsClassInitialize(
+      Pointer ctx,
+      Pointer constructor,
+      int argumentCount,
+      Pointer<Pointer> arguments,
+      Pointer<Pointer> exception) {
+    String text;
+    final context = JSContext(ctx);
+    final that = JSValue(context, constructor).toObject();
+    if (argumentCount >= 1) {
+      final arg1 = JSValue(context, arguments[0]);
+      if (arg1.isString) {
+        text = arg1.string;
+      }
+    }
+    that.setProperty(
+        'text',
+        JSValue.makeString(context, text),
+        JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+    return constructor;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+          child: RaisedButton(
+            child: Text('TEST'),
+            onPressed: () {
+              final jsContext = JSContext.createInGroup();
+              final classDef = JSClassDefinition(
+                version: 0,
+                attributes: JSClassAttributes.kJSClassAttributeNone,
+                className: 'Text',
+                callAsConstructor: Pointer.fromFunction(jsClassInitialize),
+                staticFunctions: [],
+              );
+              var flutterJSClass = JSClass.create(classDef);
+              var flutterJSObject = JSObject.make(jsContext, flutterJSClass);
+              jsContext.globalObject.setProperty('Text', flutterJSObject.toValue(),
+                  JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+              final data = jsContext.evaluate("""
+              [new Text('测试1'), new Text('测试2'), new Text('测试3')]
+            """);
+              final list = jsValueToList(data).map((e) => e.toObject().getProperty('text').string);
+              print(list);
+            },
+          )),
+    );
+  }
+}
+
+
+
+
+
+class TestBug2 extends StatelessWidget {
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+          child: RaisedButton(
+            child: Text('TEST2'),
+            onPressed: () {
+              final jsContext = JSContext.createInGroup();
+              final fun = jsContext.evaluate('(n) => { return n + n }');
+              final data = fun.toObject().callAsFunction(jsContext.globalObject, JSValuePointer(JSValue.makeNumber(jsContext, 1).pointer));
+              print(data.toNumber());
+            },
+          )),
+    );
+  }
+}
+
+
+
+
+
+
 
 class HomePage extends StatelessWidget {
   @override
@@ -67,11 +151,9 @@ class HomePage extends StatelessWidget {
 //''');
 
           controller.evaluate("""
-          flutter.test({a: new Text('测试222'), b: new Text('测试222')})
+          flutter.test([new Text('测试1'), new Text('测试2'), new Text('测试3')])
           """);
-
           print(JsWidget.widgets);
-
         },
       )),
     );

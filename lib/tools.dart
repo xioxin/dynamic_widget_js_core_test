@@ -1,7 +1,3 @@
-
-
-
-
 import 'package:flutter_jscore/flutter_jscore.dart';
 
 String jsValueType(JSValue value) {
@@ -19,4 +15,17 @@ String jsValueType(JSValue value) {
     if(obj.isConstructor) return 'Object: Constructor';
     return 'Object';
   }
+}
+
+
+List<JSValue> jsValueToList(JSValue value) {
+  final obj = value.toObject();
+  final List<JSValue> list = [];
+  final length = obj.getProperty('length').toNumber().toInt();
+  if(length > 0) {
+    for(int i = 0; i < length; i++) {
+      list.add(obj.getPropertyAtIndex(i));
+    }
+  }
+  return list;
 }

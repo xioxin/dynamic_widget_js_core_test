@@ -1,7 +1,10 @@
 import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:flutter_jscore/flutter_jscore.dart';
-import 'package:jsrun/js_core_page.dart';
+import 'package:jsrun/js_widget/js_widget.dart';
+
+import '../js_core_page_controller.dart';
+import '../tools.dart';
 
 class JsFlutter {
   final JSContext context;
@@ -61,9 +64,15 @@ class JsFlutter {
     print('showWidget');
     if (argumentCount > 0) {
       final context = JSContext(ctx);
-      final obj = JSValue(context, arguments[0]).toObject();
-      print("a: ${obj.getProperty('a').createJSONString(JSValuePointer(nullptr)).string}");
-      print("b: ${obj.getProperty('b').createJSONString(JSValuePointer(nullptr)).string}");
+
+
+      final list = jsValueToList(JSValue(context, arguments[0]));
+      print("flutter.test");
+      print(list.map((e) => e.toObject().getProperty('data').string));
+
+//      final obj = JSValue(context, arguments[0]).toObject();
+//      print("a: ${obj.getProperty('a').createJSONString(JSValuePointer(nullptr)).string}");
+//      print("b: ${obj.getProperty('b').createJSONString(JSValuePointer(nullptr)).string}");
     }
   }
 }
