@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: TestBug2(),
+      home: TestBug(),
     );
   }
 }
@@ -37,7 +37,18 @@ class MyApp extends StatelessWidget {
 
 class TestBug extends StatelessWidget {
 
-  static Pointer jsClassInitialize(
+  static JSClassDefinition classDef = JSClassDefinition(
+    version: 0,
+    attributes: JSClassAttributes.kJSClassAttributeNone,
+    className: 'Text',
+    initialize: Pointer.fromFunction(jsClassInitialize),
+    callAsConstructor: Pointer.fromFunction(jsClassConstructor),
+    staticFunctions: [],
+  );
+
+  static JSClass jsClass = JSClass.create(classDef);
+
+  static Pointer jsClassConstructor(
       Pointer ctx,
       Pointer constructor,
       int argumentCount,
@@ -45,7 +56,7 @@ class TestBug extends StatelessWidget {
       Pointer<Pointer> exception) {
     String text;
     final context = JSContext(ctx);
-    final that = JSValue(context, constructor).toObject();
+    final that = JSObject.make(context, jsClass);
     if (argumentCount >= 1) {
       final arg1 = JSValue(context, arguments[0]);
       if (arg1.isString) {
@@ -56,7 +67,13 @@ class TestBug extends StatelessWidget {
         'text',
         JSValue.makeString(context, text),
         JSPropertyAttributes.kJSPropertyAttributeDontDelete);
-    return constructor;
+    return that.pointer;
+  }
+
+  static void jsClassInitialize(Pointer ctx, Pointer object) {
+    print('jsClassInitialize');
+//    final context = JSContext(ctx);
+//    final obj = JSObject(context, object);
   }
 
   @override
@@ -67,15 +84,7 @@ class TestBug extends StatelessWidget {
             child: Text('TEST'),
             onPressed: () {
               final jsContext = JSContext.createInGroup();
-              final classDef = JSClassDefinition(
-                version: 0,
-                attributes: JSClassAttributes.kJSClassAttributeNone,
-                className: 'Text',
-                callAsConstructor: Pointer.fromFunction(jsClassInitialize),
-                staticFunctions: [],
-              );
-              var flutterJSClass = JSClass.create(classDef);
-              var flutterJSObject = JSObject.make(jsContext, flutterJSClass);
+              var flutterJSObject = JSObject.make(jsContext, jsClass);
               jsContext.globalObject.setProperty('Text', flutterJSObject.toValue(),
                   JSPropertyAttributes.kJSPropertyAttributeDontDelete);
               final data = jsContext.evaluate("""
