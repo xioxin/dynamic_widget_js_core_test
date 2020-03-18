@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_jscore/flutter_jscore.dart';
 
@@ -22,13 +24,9 @@ class JsWidget {
       final jsObj = jsValue.toObject();
       if (jsObj.hasProperty(PropertyName.widgetKey)) {
         final widgetKey = jsObj.getProperty(PropertyName.widgetKey).string;
-        print('getWidgetForKey widgetKey: $widgetKey');
-
         return getWidgetForKey(widgetKey);
       }
     }
-    print('getWFJSV???');
-
     return null;
     // todo: 错误处理
   }
@@ -47,5 +45,44 @@ class JsWidget {
   String widgetKey;
   JSContext context;
 
-  static injectionJsClass(JSContext context) {}
+  static final String className = '';
+  @override
+  static final JSClassDefinition classDef = JSClassDefinition(
+    version: 0,
+    attributes: JSClassAttributes.kJSClassAttributeNone,
+    className: className,
+    initialize: Pointer.fromFunction(jsClassInitialize),
+    callAsConstructor: Pointer.fromFunction(jsClassConstructor),
+    finalize: Pointer.fromFunction(jsClassFinalize),
+    staticFunctions: staticFunctions,
+  );
+  @override
+  static final List<JSStaticFunction> staticFunctions = [];
+  @override
+  static final jsClass = JSClass.create(classDef);
+  @override
+  static void jsClassInitialize(Pointer ctx, Pointer object) {
+//    print('jsClassInitialize');
+  }
+  @override
+  static void jsClassFinalize(Pointer object) {
+//    print("jsClassFinalize 即将销毁");
+  }
+  @override
+  static Pointer jsClassConstructor(
+      Pointer ctx,
+      Pointer constructor,
+      int argumentCount,
+      Pointer<Pointer> arguments,
+      Pointer<Pointer> exception) {
+    return constructor;
+  }
+
+  @override
+  static injectionJsClass(JSContext context) {
+    assert(className == null);
+    var flutterJSObject = JSObject.make(context, jsClass);
+    context.globalObject.setProperty(className, flutterJSObject.toValue(),
+        JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+  }
 }

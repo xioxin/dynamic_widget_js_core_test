@@ -27,16 +27,12 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: TestBug(),
+      home: TestBug2(),
     );
   }
 }
 
-
-
-
 class TestBug extends StatelessWidget {
-
   static JSClassDefinition classDef = JSClassDefinition(
     version: 0,
     attributes: JSClassAttributes.kJSClassAttributeNone,
@@ -45,7 +41,6 @@ class TestBug extends StatelessWidget {
     callAsConstructor: Pointer.fromFunction(jsClassConstructor),
     staticFunctions: [],
   );
-
   static JSClass jsClass = JSClass.create(classDef);
 
   static Pointer jsClassConstructor(
@@ -63,9 +58,7 @@ class TestBug extends StatelessWidget {
         text = arg1.string;
       }
     }
-    that.setProperty(
-        'text',
-        JSValue.makeString(context, text),
+    that.setProperty('text', JSValue.makeString(context, text),
         JSPropertyAttributes.kJSPropertyAttributeDontDelete);
     return that.pointer;
   }
@@ -81,26 +74,23 @@ class TestBug extends StatelessWidget {
     return Scaffold(
       body: Center(
           child: RaisedButton(
-            child: Text('TEST'),
-            onPressed: () {
-              final jsContext = JSContext.createInGroup();
-              var flutterJSObject = JSObject.make(jsContext, jsClass);
-              jsContext.globalObject.setProperty('Text', flutterJSObject.toValue(),
-                  JSPropertyAttributes.kJSPropertyAttributeDontDelete);
-              final data = jsContext.evaluate("""
+        child: Text('TEST'),
+        onPressed: () {
+          final jsContext = JSContext.createInGroup();
+          var flutterJSObject = JSObject.make(jsContext, jsClass);
+          jsContext.globalObject.setProperty('Text', flutterJSObject.toValue(),
+              JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+          final data = jsContext.evaluate("""
               [new Text('测试1'), new Text('测试2'), new Text('测试3')]
             """);
-              final list = jsValueToList(data).map((e) => e.toObject().getProperty('text').string);
-              print(list);
-            },
-          )),
+          final list = jsValueToList(data)
+              .map((e) => e.toObject().getProperty('text').string);
+          print(list);
+        },
+      )),
     );
   }
 }
-
-
-
-
 
 class TestBug2 extends StatelessWidget {
 
@@ -109,25 +99,58 @@ class TestBug2 extends StatelessWidget {
     return Scaffold(
       body: Center(
           child: RaisedButton(
-            child: Text('TEST2'),
-            onPressed: () {
-              final jsContext = JSContext.createInGroup();
-              final fun = jsContext.evaluate('(n) => { return n + n }');
-              final data = fun.toObject().callAsFunction(jsContext.globalObject, JSValuePointer(JSValue.makeNumber(jsContext, 1).pointer));
-              print(data.toNumber());
-            },
-          )),
+        child: Text('TEST2'),
+        onPressed: () {
+          final jsContext = JSContext.createInGroup();
+          jsContext.globalObject.setProperty(
+              'test',
+              JSObject.makeFunctionWithCallback(
+                  jsContext, 'test',
+                  Pointer.fromFunction(testFunction)
+              ).toValue(),
+              JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+          JsConsole(jsContext);
+          jsContext.evaluate('test((n) => n + n).then((v) => console.log(v))');
+        },
+      )),
     );
+  }
+
+  static Pointer testFunction(
+      Pointer ctx,
+      Pointer function,
+      Pointer thisObject,
+      int argumentCount,
+      Pointer<Pointer> arguments,
+      Pointer<Pointer> exception) {
+    final context = JSContext(ctx);
+//    context.retain();
+//    final thisVal = JSValue(context, thisObject);
+    final jsv = JSValue(context, arguments[0]);
+//    jsv.protect();
+//    thisVal.protect();
+//    final data = jsv.toObject().callAsFunction(JSObject(context, thisObject), JSValuePointer(JSValue.makeNumber(context, 2.0).pointer));
+//    print(data.toNumber());
+    print('pointer1:');
+    final resolve = JSObject.makeFunction(context, 'resolve', JSStringPointer.array(['value']), '', '');
+    print('pointer1-1');
+    final reject = JSObject.makeFunction(context, 'reject', JSStringPointer.array(['value']), '', '');
+    print('pointer1-2');
+    final promise = JSObject.makeDeferredPromise(context, JSObjectPointer(resolve.pointer), JSObjectPointer(reject.pointer));
+    print('pointer1-3');
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      print('pointer2:');
+      reject.callAsFunction(context.globalObject, JSValuePointer(JSValue.makeNumber(context, 99.0).pointer));
+    });
+
+    return promise.pointer;
   }
 }
 
-
-
-
-
-
-
 class HomePage extends StatelessWidget {
+  JsCorePageController controller;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -135,34 +158,39 @@ class HomePage extends StatelessWidget {
           child: RaisedButton(
         child: Text('RUN'),
         onPressed: () {
-          final controller = JsCorePageController(context);
-//          controller.evaluate('''
-//console.log('CONTROLLER: ' + __CONTROLLER_ID__);
-//var test = new Scaffold({
-//  appBar: new AppBar({title: new Text('标题111'), actions: [
-//    new RaisedButton({
-//      child: new Text('Action2'),
-//      onPressed: () => {
-//        console.log("button Action");
-//      }
-//    }),
-//  ]}),
-//  body: new RaisedButton({
-//    child: new Text('测试222'),
-//    onPressed: () => {
-//      console.log("button click");
-//    }
-//  })
-//});
-//console.log('hello world');
-//console.log(JSON.stringify(test, null, 2));
-//flutter.showWidget(test);
-//''');
+          if (controller != null) {
+            controller.context.release();
+            controller = null;
+          }
 
-          controller.evaluate("""
-          flutter.test([new Text('测试1'), new Text('测试2'), new Text('测试3')])
-          """);
-          print(JsWidget.widgets);
+          controller = JsCorePageController(context);
+          controller.evaluate('''
+console.log('CONTROLLER: ' + __CONTROLLER_ID__);
+var test = new Scaffold({
+  appBar: new AppBar({title: new Text('标题111'), actions: [
+    new RaisedButton({
+      child: new Text('Action2'),
+      onPressed: () => {
+        console.log("button Action");
+      }
+    }),
+  ]}),
+  body: new RaisedButton({
+    child: new Text('测试222'),
+    onPressed: () => {
+      console.log("button click");
+    }
+  })
+});
+console.log('hello world');
+console.log(JSON.stringify(test, null, 2));
+flutter.showWidget(test);
+''');
+
+//          controller.evaluate("""
+//          flutter.test([new Text('测试1'), new Text('测试2'), new Text('测试3')])
+//          """);
+//          print(JsWidget.widgets);
         },
       )),
     );

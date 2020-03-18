@@ -4,31 +4,38 @@ import 'package:flutter_jscore/flutter_jscore.dart';
 import '../tools.dart';
 import 'js_widget.dart';
 
+
 class JsRaisedButton extends JsWidget {
-  @override
-  static injectionJsClass(JSContext context) {
-    final classDef = JSClassDefinition(
-      version: 0,
-      attributes: JSClassAttributes.kJSClassAttributeNone,
-      className: 'RaisedButton',
-      callAsConstructor: Pointer.fromFunction(jsClassInitialize),
-      finalize: Pointer.fromFunction(jsClassFinalize),
-      staticFunctions: [],
-    );
-    var flutterJSClass = JSClass.create(classDef);
-    var flutterJSObject = JSObject.make(context, flutterJSClass);
-    context.globalObject.setProperty('RaisedButton', flutterJSObject.toValue(),
-        JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+
+  static final String className = 'RaisedButton';
+  static final JSClassDefinition classDef = JSClassDefinition(
+    version: 0,
+    attributes: JSClassAttributes.kJSClassAttributeNone,
+    className: className,
+    initialize: Pointer.fromFunction(jsClassInitialize),
+    callAsConstructor: Pointer.fromFunction(jsClassConstructor),
+    finalize: Pointer.fromFunction(jsClassFinalize),
+    staticFunctions: [],
+  );
+  static final List<JSStaticFunction> staticFunctions = [];
+
+  static final jsClass = JSClass.create(classDef);
+
+  static void jsClassInitialize(Pointer ctx, Pointer object) {
+    print('jsClassInitialize');
+  }
+  static void jsClassFinalize(Pointer object) {
+    print("jsClassFinalize 即将销毁");
   }
 
-  static Pointer jsClassInitialize(
+  static Pointer jsClassConstructor(
       Pointer ctx,
       Pointer constructor,
       int argumentCount,
       Pointer<Pointer> arguments,
       Pointer<Pointer> exception) {
     final context = JSContext(ctx);
-    final that = JSValue(context, constructor).toObject();
+    final that = JSObject.make(context, jsClass);
 
     Widget child;
     VoidCallback onPressed;
@@ -42,14 +49,29 @@ class JsRaisedButton extends JsWidget {
       if (arg1.hasProperty('onPressed')) {
         that.setProperty('onPressed', arg1.getProperty('onPressed'), JSPropertyAttributes.kJSPropertyAttributeDontDelete);
         final onPressedJsValue = arg1.getProperty('onPressed');
-        print(jsValueType(onPressedJsValue));
+        if(onPressedJsValue.isObject) {
+          final onPressedObj = onPressedJsValue.toObject();
+          if(onPressedObj.isFunction) {
+//            that.setProperty('onPressed', onPressedJsValue, JSPropertyAttributes.kJSPropertyAttributeDontDelete);
 
-        final onPressedObj = onPressedJsValue.toObject();
-        onPressed = () {
-          print('onPressed');
-          onPressedObj.callAsFunction(context.globalObject,
-              JSValuePointer.array([JSValue.makeString(context, 'test')]));
-        };
+            onPressedJsValue.protect();
+            onPressed = () {
+              print(onPressedJsValue);
+              print('onPressed');
+              final onPressedObj = onPressedJsValue.toObject();
+              print(onPressedObj);
+
+//              final context = JSContext(ctx);
+//              print('onPressed2');
+//              final obj = JSObject(context, onPressedPointer);
+//              print(obj.isFunction ? 'is fun': 'not fun');
+//              print(obj.isConstructor ? 'is con': 'not con');
+//              print('onPressed3');
+//              obj.callAsFunction(that,JSValuePointer.array([JSValue.makeString(context, 'test')]));
+//              print('onPressed4');
+            };
+          }
+        }
       }
     }
     final widget = RaisedButton(
@@ -63,15 +85,14 @@ class JsRaisedButton extends JsWidget {
         PropertyName.widgetKey,
         JSValue.makeString(context, jsWidget.widgetKey),
         JSPropertyAttributes.kJSPropertyAttributeDontDelete);
-    return constructor;
-  }
 
-  static void jsClassFinalize(Pointer object) {
-    print("jsClassFinalize 即将销毁");
+    return that.pointer;
   }
 
   @override
-  Widget build(BuildContext context) {
-    return this.widget;
+  static injectionJsClass(JSContext context) {
+    var flutterJSObject = JSObject.make(context, jsClass);
+    context.globalObject.setProperty(className, flutterJSObject.toValue(),
+        JSPropertyAttributes.kJSPropertyAttributeDontDelete);
   }
 }

@@ -5,23 +5,29 @@ import 'js_widget.dart';
 
 
 class JsText extends JsWidget {
-  @override
-  static injectionJsClass(JSContext context) {
-    final classDef = JSClassDefinition(
-      version: 0,
-      attributes: JSClassAttributes.kJSClassAttributeNone,
-      className: 'Text',
-      callAsConstructor: Pointer.fromFunction(jsClassInitialize),
-      finalize: Pointer.fromFunction(jsClassFinalize),
-      staticFunctions: [],
-    );
-    var flutterJSClass = JSClass.create(classDef);
-    var flutterJSObject = JSObject.make(context, flutterJSClass);
-    context.globalObject.setProperty('Text', flutterJSObject.toValue(),
-        JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+
+  static final String className = 'Text';
+  static final JSClassDefinition classDef = JSClassDefinition(
+    version: 0,
+    attributes: JSClassAttributes.kJSClassAttributeNone,
+    className: className,
+    initialize: Pointer.fromFunction(jsClassInitialize),
+    callAsConstructor: Pointer.fromFunction(jsClassConstructor),
+    finalize: Pointer.fromFunction(jsClassFinalize),
+    staticFunctions: [],
+  );
+  static final List<JSStaticFunction> staticFunctions = [];
+
+  static final jsClass = JSClass.create(classDef);
+
+  static void jsClassInitialize(Pointer ctx, Pointer object) {
+    print('jsClassInitialize');
+  }
+  static void jsClassFinalize(Pointer object) {
+    print("jsClassFinalize 即将销毁");
   }
 
-  static Pointer jsClassInitialize(
+  static Pointer jsClassConstructor(
       Pointer ctx,
       Pointer constructor,
       int argumentCount,
@@ -30,9 +36,7 @@ class JsText extends JsWidget {
     String text;
     final context = JSContext(ctx);
     final jsWidget = JsText();
-//    final that = JSObject();
-    final that = JSValue(context, constructor).toObject();
-
+    final that = JSObject.make(context, jsClass);
     if (argumentCount >= 1) {
       final arg1 = JSValue(context, arguments[0]);
       if (arg1.isString) {
@@ -42,7 +46,6 @@ class JsText extends JsWidget {
     if (argumentCount >= 2) {
       // 额外参数
     }
-
     final widget = Text(text ?? '');
     jsWidget.registerWidget('Text', widget);
     that.setProperty(
@@ -55,11 +58,13 @@ class JsText extends JsWidget {
         JSValue.makeString(context, text),
         JSPropertyAttributes.kJSPropertyAttributeDontDelete);
 
-    return constructor;
+    return that.pointer;
   }
 
-  static void jsClassFinalize(Pointer object) {
-    print("jsClassFinalize 即将销毁");
+  @override
+  static injectionJsClass(JSContext context) {
+    var flutterJSObject = JSObject.make(context, jsClass);
+    context.globalObject.setProperty(className, flutterJSObject.toValue(),
+        JSPropertyAttributes.kJSPropertyAttributeDontDelete);
   }
-
 }

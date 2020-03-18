@@ -20,11 +20,6 @@ class JsFlutter {
           callAsFunction: Pointer.fromFunction(showWidget),
           attributes: JSPropertyAttributes.kJSPropertyAttributeNone,
         ),
-        JSStaticFunction(
-          name: 'test',
-          callAsFunction: Pointer.fromFunction(test),
-          attributes: JSPropertyAttributes.kJSPropertyAttributeNone,
-        ),
       ],
     ));
     var flutterJSObject = JSObject.make(context, flutterJSClass);
@@ -42,13 +37,23 @@ class JsFlutter {
       print('showWidget');
       if (argumentCount > 0) {
         final context = JSContext(ctx);
-        final widget = JsWidget.getWidgetForJSValue(JSValue(context, arguments[0]));
+        final jsVal = JSValue(context, arguments[0]);
+        print('保护');
+        jsVal.protect();
+        jsVal.protect();
+        jsVal.protect();
+        jsVal.protect();
+        jsVal.protect();
+        final widget = JsWidget.getWidgetForJSValue(jsVal);
         print(widget);
         final controllerId = context.globalObject.getProperty(PropertyName.controllerId).toNumber().floor();
         final controller = JsCorePageController.getControllerById(controllerId);
         Navigator.push(controller.buildContext, MaterialPageRoute(builder: (_) {
           return widget;
-        }));
+        })).then((val) {
+          print('解除保护');
+          jsVal.unProtect();
+        });
       }
   }
 

@@ -4,30 +4,36 @@ import 'package:flutter_jscore/flutter_jscore.dart';
 import 'js_widget.dart';
 
 class JsScaffold extends JsWidget {
-  @override
-  static injectionJsClass(JSContext context) {
-    final classDef = JSClassDefinition(
-      version: 0,
-      attributes: JSClassAttributes.kJSClassAttributeNone,
-      className: 'Scaffold',
-      callAsConstructor: Pointer.fromFunction(jsClassInitialize),
-      finalize: Pointer.fromFunction(jsClassFinalize),
-      staticFunctions: [],
-    );
-    var flutterJSClass = JSClass.create(classDef);
-    var flutterJSObject = JSObject.make(context, flutterJSClass);
-    context.globalObject.setProperty('Scaffold', flutterJSObject.toValue(),
-        JSPropertyAttributes.kJSPropertyAttributeDontDelete);
+
+  static final String className = 'Scaffold';
+  static final JSClassDefinition classDef = JSClassDefinition(
+    version: 0,
+    attributes: JSClassAttributes.kJSClassAttributeNone,
+    className: className,
+    initialize: Pointer.fromFunction(jsClassInitialize),
+    callAsConstructor: Pointer.fromFunction(jsClassConstructor),
+    finalize: Pointer.fromFunction(jsClassFinalize),
+    staticFunctions: [],
+  );
+  static final List<JSStaticFunction> staticFunctions = [];
+
+  static final jsClass = JSClass.create(classDef);
+
+  static void jsClassInitialize(Pointer ctx, Pointer object) {
+    print('jsClassInitialize');
+  }
+  static void jsClassFinalize(Pointer object) {
+    print("jsClassFinalize 即将销毁");
   }
 
-  static Pointer jsClassInitialize(
+  static Pointer jsClassConstructor(
       Pointer ctx,
       Pointer constructor,
       int argumentCount,
       Pointer<Pointer> arguments,
       Pointer<Pointer> exception) {
     final context = JSContext(ctx);
-    final that = JSValue(context, constructor).toObject();
+    final that = JSObject.make(context, jsClass);
 
     Widget appBar;
     Widget body;
@@ -54,11 +60,14 @@ class JsScaffold extends JsWidget {
         PropertyName.widgetKey,
         JSValue.makeString(context, jsWidget.widgetKey),
         JSPropertyAttributes.kJSPropertyAttributeDontDelete);
-    return constructor;
+
+    return that.pointer;
   }
 
-  static void jsClassFinalize(Pointer object) {
-    print("jsClassFinalize 即将销毁");
+  @override
+  static injectionJsClass(JSContext context) {
+    var flutterJSObject = JSObject.make(context, jsClass);
+    context.globalObject.setProperty(className, flutterJSObject.toValue(),
+        JSPropertyAttributes.kJSPropertyAttributeDontDelete);
   }
-
 }

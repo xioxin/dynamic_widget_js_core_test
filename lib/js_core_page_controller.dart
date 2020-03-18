@@ -28,7 +28,8 @@ class JsCorePageController {
         PropertyName.controllerId,
         JSValue.makeNumber(context, controllerId.toDouble()),
         JSPropertyAttributes.kJSPropertyAttributeDontDelete);
-
+    context.retain();
+//    JSManagedValue
     JsConsole(context);
     JsFlutter(context, buildContext);
     JsScaffold.injectionJsClass(context);
